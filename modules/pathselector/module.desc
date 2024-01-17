@@ -1,0 +1,4 @@
+name: "pathselector"
+type: "viewmodule"
+interface: "QtPlugin"
+class: "PathSelectorViewStep"

@@ -647,23 +647,27 @@ def run():
     libcalamares.utils.host_env_process_output(
         ["cp", "/dev/stdin", config], None, cfg)
 
-    status = _("Installing NixOS")
-    libcalamares.job.setprogress(0.3)
+    status = _("Saving NixOS configuration")
+    selected_path = None
+    if libcalamares.globalstorage.contains("selectedPath"):
+        selected_path = libcalamares.globalstorage.value("selectedPath")
 
-    # Install customizations
+    if not selected_path:
+        libcalamares.utils.debug("Configuration path not set.")
+        return (status, _("No path was selected to save configuration"))
+
+    hardware_config_src = os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")
+    configuration_src = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
+    hardware_config_dest = os.path.join(selected_path, "hardware-configuration.nix")
+    configuration_dest = os.path.join(selected_path, "configuration.nix")
+
     try:
-        output = ""
-        proc = subprocess.Popen(["pkexec", "nixos-install", "--no-root-passwd", "--root", root_mount_point], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        while True:
-            line = proc.stdout.readline().decode("utf-8")
-            output += line
-            libcalamares.utils.debug("nixos-install: {}".format(line.strip()))
-            if not line:
-                break
-        exit = proc.wait()
-        if exit != 0:
-            return (_("nixos-install failed"), _(output))
-    except:
-        return (_("nixos-install failed"), _("Installation failed to complete"))
+        shutil.copy(hardware_config_src, hardware_config_dest)
+        shutil.copy(configuration_src, configuration_dest)
+    except IOError as e:
+        libcalamares.utils.debug(f"Error copying files: {e}")
+        return (status, _("Failed to copy NixOS configuration files."))
 
+    libcalamares.job.setprogress(1.0)
+    libcalamares.utils.debug(status)
     return None
