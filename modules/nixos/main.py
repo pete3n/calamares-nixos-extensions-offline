@@ -12,6 +12,7 @@ import libcalamares
 import os
 import subprocess
 import re
+import shutil
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -668,6 +669,7 @@ def run():
     try:
         shutil.copy(hardware_config_src, hardware_config_dest)
         shutil.copy(configuration_src, configuration_dest)
+        libcalamares.utils.debug(f"NixOS configuration files copied to: {selected_path}")
     except IOError as e:
         libcalamares.utils.debug(f"Error copying files: {e}")
         return (status, _("Failed to copy NixOS configuration files."))
