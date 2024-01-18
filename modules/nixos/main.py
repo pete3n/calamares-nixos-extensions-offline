@@ -648,9 +648,13 @@ def run():
         ["cp", "/dev/stdin", config], None, cfg)
 
     status = _("Saving NixOS configuration")
-    selected_path = None
-    if libcalamares.globalstorage.contains("selectedPath"):
-        selected_path = libcalamares.globalstorage.value("selectedPath")
+    selected_path = "/tmp/nixos"
+
+    try:
+        os.makedirs(selected_path)
+    except OSError as e:
+        libcalamares.utils.debug(f"Error creating directory {selected_path}: {e}")
+        return (status, _("Failed to create directory for NixOS configuration."))
 
     if not selected_path:
         libcalamares.utils.debug("Configuration path not set.")
