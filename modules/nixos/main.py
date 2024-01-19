@@ -662,10 +662,11 @@ def run():
 
     try:
         with open(gs_path, 'w') as file:
-            gs_members = dir(gs)
-            for member_name in gs_members:
-                member = getattr(gs, member_name, None)
-                file.write(f"{member_name}: {type(member)}\n")
+            if hasattr(gs, 'keys'):
+                for key in gs.keys():
+                    value = gs.value(key) if gs.contains(key) else None
+                    value_str = str(value)
+                    file.write(f"{key}: {value_str}\n")
     except IOError as e:
         libcalamares.utils.debug(f"Error saving calamares globalstorage object {gs_path}: {e}")
         return (status, _("Failed to save setup data."))
