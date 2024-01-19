@@ -661,7 +661,7 @@ def run():
         return (status, _("Failed to create directory for NixOS configuration."))
 
     try:
-        data_with_type = {}
+        data_with_types = {}
         for key in dir(gs):
             value = getattr(gs, key, None)
             data_with_types[key] = (value, str(type(value)))
