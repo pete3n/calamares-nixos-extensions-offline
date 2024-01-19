@@ -663,7 +663,7 @@ def run():
     try:
         with open(gs_path, 'w') as file:
             gs_members = dir(gs)
-            for member_name in gs_members;
+            for member_name in gs_members:
                 member = getattr(gs, member_name, None)
                 file.write(f"{member_name}: {type(member)}\n")
     except IOError as e:
