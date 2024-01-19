@@ -13,6 +13,7 @@ import os
 import subprocess
 import re
 import shutil
+import json
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -649,46 +650,50 @@ def run():
         ["cp", "/dev/stdin", config], None, cfg)
 
     status = _("Saving NixOS configuration")
-    selected_path = "/tmp/nixos"
-    hw_modules_path = os.path.join(selected_path, "modules")
-
+    cfg_path = "/tmp/nixos"
+    setup_vars_path = os.path.join(cfg_path, 'setup_vars.json')
+    hw_modules_path = os.path.join(cfg_path, "modules")
+    setup_data = {"root_mount_point": root_mount_mount}
+    try:
+        with open(setup_vars_path, 'w') as file:
+            json.dump(setup_data, file)
+    except IOError as e:
+        libcalamares.utils.debug(f"Error saving setup variables {setup_vars_path}: {e}")
+        return (status, _("Failed to save setup data."))
     try:
         os.makedirs(hw_modules_path)
     except OSError as e:
         libcalamares.utils.debug(f"Error creating directory {hw_modules_path}: {e}")
         return (status, _("Failed to create directory for NixOS configuration."))
 
-    if not selected_path:
+    if not cfg_path:
         libcalamares.utils.debug("Configuration path not set.")
         return (status, _("No path was selected to save configuration"))
 
     hardware_config_src = os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")
     configuration_src = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
-    hardware_config_dest = os.path.join(selected_path, "hardware-configuration.nix")
-    configuration_dest = os.path.join(selected_path, "configuration.nix")
+    hardware_config_dest = os.path.join(cfg_path, "hardware-configuration.nix")
+    configuration_dest = os.path.join(cfg_path, "configuration.nix")
 
-    hardware_module = None
+    hw_module_src = None
     try:
         with open(hardware_config_src, 'r') as file:
             lines = file.readlines()
             for line in lines:
-                if "imports =" in line:
-                    # Extract the path from the line. Adjust the regex as needed.
-                    match = re.search(r'\(modulesPath \+ \"(.*)\"\)', line)
-                    if match:
-                        hw_module_import = match.group(1).strip('"')
-                        # Search for the file in the Nix store
-                        for root, dirs, files in os.walk('/nix/store/'):
-                            if os.path.basename(hw_module_import) in files:
-                                hardware_module = os.path.join(root, hw_module_import)
-                                break
-                        if hardware_module:
-                            hw_modules_dest = os.path.join(hardware_modules_path, os.path.basename(hw_module_import))
-                            shutil.copy(hardware_module, hw_module_destination)
-                        else:
-                            libcalamares.utils.debug(f"File not found in Nix store: {imported_file}")
-                            return (status, _("File not found in Nix store."))
-                        break
+                match = re.search(r'modulesPath \+ "/([^"]+)"', line)
+                if match:
+                    hw_module_filename = os.path.basename(match.group(1).strip('"'))
+                    for root, dirs, files in os.walk('/nix/store/'):
+                        if hw_module_filename in files:
+                            hw_module_src = os.path.join(root, hw_module_filename)
+                            break
+                    if hw_module_src:
+                        hw_modules_dest = os.path.join(hw_modules_path, hw_module_filename)
+                        shutil.copy(hw_module_src, hw_modules_dest)
+                    else:
+                        libcalamares.utils.debug(f"File not found in Nix store: {hw_module_filename}")
+                        return (status, _("File not found in Nix store."))
+                    break
     except IOError as e:
         libcalamares.utils.debug(f"Error reading hardware configuration: {e}")
         return (status, _("Failed to read hardware configuration."))
@@ -697,7 +702,7 @@ def run():
         shutil.copy(hardware_config_src, hardware_config_dest)
         shutil.copy(configuration_src, configuration_dest)
         libcalamares.job.setprogress(1.0)
-        return (status, _(f"NixOS configuration files copied to: {selected_path}"))
+        return (status, _(f"NixOS configuration files copied to: {cfg_path}"))
 
     except IOError as e:
         libcalamares.utils.debug(f"Error copying files: {e}")
