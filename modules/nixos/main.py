@@ -76,7 +76,7 @@ def run():
 
     status = _("Copying NixOS configuration")
     libcalamares.job.setprogress(0.3)
-    nix_cfg_src = "/nix-cfg"
+    nix_cfg_src = "/iso/nix-cfg"
 
     try:
         for root, dirs, files in os.walk(nix_cfg_src):
