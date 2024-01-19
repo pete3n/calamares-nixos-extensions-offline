@@ -651,9 +651,8 @@ def run():
 
     status = _("Saving NixOS configuration")
     cfg_path = "/tmp/nixos"
-    setup_vars_path = os.path.join(cfg_path, 'setup_vars.json')
+    gs_path = os.path.join(cfg_path, 'calamares_gs.json')
     hw_modules_path = os.path.join(cfg_path, "modules")
-    setup_data = {"root_mount_point": root_mount_point}
 
     try:
         os.makedirs(hw_modules_path)
@@ -662,10 +661,10 @@ def run():
         return (status, _("Failed to create directory for NixOS configuration."))
 
     try:
-        with open(setup_vars_path, 'w') as file:
-            json.dump(setup_data, file)
+        with open(gs_path, 'w') as file:
+            json.dump(gs, file)
     except IOError as e:
-        libcalamares.utils.debug(f"Error saving setup variables {setup_vars_path}: {e}")
+        libcalamares.utils.debug(f"Error saving calamares globalstorage object {gs_path}: {e}")
         return (status, _("Failed to save setup data."))
 
     if not cfg_path:

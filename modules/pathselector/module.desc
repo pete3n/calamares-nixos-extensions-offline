@@ -1,5 +1,0 @@
-name:       "pathselector"
-type:       "viewmodule"
-interface:  "python"
-script:     "main.py"
-noconfig:   true
