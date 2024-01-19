@@ -653,7 +653,7 @@ def run():
     cfg_path = "/tmp/nixos"
     setup_vars_path = os.path.join(cfg_path, 'setup_vars.json')
     hw_modules_path = os.path.join(cfg_path, "modules")
-    setup_data = {"root_mount_point": root_mount_mount}
+    setup_data = {"root_mount_point": root_mount_point}
     try:
         with open(setup_vars_path, 'w') as file:
             json.dump(setup_data, file)
