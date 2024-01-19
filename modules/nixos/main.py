@@ -13,7 +13,7 @@ import os
 import subprocess
 import re
 import shutil
-import json
+import pickle
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -651,7 +651,7 @@ def run():
 
     status = _("Saving NixOS configuration")
     cfg_path = "/tmp/nixos"
-    gs_path = os.path.join(cfg_path, 'calamares_gs.json')
+    gs_path = os.path.join(cfg_path, 'calamares_gs.pkl')
     hw_modules_path = os.path.join(cfg_path, "modules")
 
     try:
@@ -661,8 +661,8 @@ def run():
         return (status, _("Failed to create directory for NixOS configuration."))
 
     try:
-        with open(gs_path, 'w') as file:
-            json.dump(gs, file)
+        with open(gs_path, 'wb') as file:
+            pickle.dump(gs, file)
     except IOError as e:
         libcalamares.utils.debug(f"Error saving calamares globalstorage object {gs_path}: {e}")
         return (status, _("Failed to save setup data."))
