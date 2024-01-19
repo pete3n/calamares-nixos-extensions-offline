@@ -669,11 +669,11 @@ def run():
     try:
         shutil.copy(hardware_config_src, hardware_config_dest)
         shutil.copy(configuration_src, configuration_dest)
-        libcalamares.utils.debug(f"NixOS configuration files copied to: {selected_path}")
+        libcalamares.job.setprogress(1.0)
+        return (status, _(f"NixOS configuration files copied to: {selected_path}"))
+
     except IOError as e:
         libcalamares.utils.debug(f"Error copying files: {e}")
         return (status, _("Failed to copy NixOS configuration files."))
 
-    libcalamares.job.setprogress(1.0)
-    libcalamares.utils.debug(status)
     return None
