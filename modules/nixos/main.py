@@ -13,6 +13,7 @@ import os
 import subprocess
 import re
 import shutil
+import json
 
 import gettext
 _ = gettext.translation("calamares-python",
