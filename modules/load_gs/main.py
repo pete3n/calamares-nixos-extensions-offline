@@ -52,7 +52,7 @@ def run():
     """Restore gs data."""
 
     global status
-    status = _"Restoring Calamares data")
+    status = _("Restoring Calamares data")
     libcalamares.job.setprogress(0.1)
     gs = libcalamares.globalstorage
     gs_file = '/iso/nix-cfg/calamares.gs'
