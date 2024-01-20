@@ -670,8 +670,10 @@ def run():
                     encoded_password = base64.b64encode(value).decode('utf-8')
                     data_with_types[key] = (encoded_password, 'base64_binary')
             else:
-                value = getattr(gs, key, None)
-                data_with_types[key] = (value, str(type(value)))
+                # Convert non-serializable types to string representations
+                if not isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                    value = str(value)
+                data_with_types[key] = (value, str(type(value).__name__))
         with open(gs_path, 'w') as file:
             json.dump(data_with_types, file)
     except IOError as e:
