@@ -12,7 +12,6 @@ import libcalamares
 import os
 import subprocess
 import re
-import shutil
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -80,14 +79,14 @@ def run():
 
     hardware_config_src = os.path.join(nix_cfg_src, "hardware-configuration.nix")
     configuration_src = os.path.join(nix_cfg_src, "configuration.nix")
-    hardware_config_dest = os.path.join(root_mount_point, "hardware-configuration.nix")
-    configuration_dest = os.path.join(root_mount_point, "configuration.nix")
+    hardware_config_dest = os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")
+    configuration_dest = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
 
     try:
-        shutil.copy(hardware_config_src, hardware_config_dest)
-        shutil.copy(configuration_src, configuration_dest)
-    except Exception as e:
-        return (_("nixos-install failed"), _(f"Installation failed to copy configuration files, with error: {e}"))
+        subprocess.run(["sudo", "cp", configuration_src, configuration_dest], check=True)
+        subprocess.run(["sudo", "cp", hardware_config_src, hardware_config_dest], check=True)
+    except subprocess.CalledProcessError as e:
+        return (_(f"Installation failed to copy configuration files, with error: {e}"))
 
     status = _("Installing NixOS")
     libcalamares.job.setprogress(0.4)
