@@ -14,6 +14,7 @@ import subprocess
 import re
 import shutil
 import json
+import base64
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -652,8 +653,7 @@ def run():
     status = _("Saving NixOS configuration")
     cfg_path = "/tmp/nixos"
     hw_modules_path = os.path.join(cfg_path, "modules")
-    gs_path = os.path.join(cfg_path, 'calamares_gs.txt')
-    gs_password = os.path.join(cfg_path, 'calamares_pw.bin')
+    gs_path = os.path.join(cfg_path, 'calamares.gs')
 
     try:
         os.makedirs(hw_modules_path)
@@ -664,8 +664,14 @@ def run():
     try:
         data_with_types = {}
         for key in dir(gs):
-            value = getattr(gs, key, None)
-            data_with_types[key] = (value, str(type(value)))
+            if key == 'password':
+                value = getattr(globalstorage, key, None)
+                if value is not None:
+                    encoded_password = base64.b64encode(value).decode('utf-8')
+                    data_with_types[key] = (encoded_password, 'base64_binary')
+            else:
+                value = getattr(gs, key, None)
+                data_with_types[key] = (value, str(type(value)))
         with open(gs_path, 'w') as file:
             json.dump(data_with_types, file)
     except IOError as e:
