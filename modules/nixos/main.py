@@ -665,12 +665,13 @@ def run():
         data_with_types = {}
         for key in dir(gs):
             if key == 'password':
-                value = getattr(globalstorage, key, None)
+                value = getattr(gs, key, None)
                 if value is not None:
                     encoded_password = base64.b64encode(value).decode('utf-8')
                     data_with_types[key] = (encoded_password, 'base64_binary')
             else:
                 # Convert non-serializable types to string representations
+                value = getattr(gs, key, None)
                 if not isinstance(value, (str, int, float, bool, list, dict, type(None))):
                     value = str(value)
                 data_with_types[key] = (value, str(type(value).__name__))
