@@ -22,7 +22,7 @@ status = pretty_name()
 def pretty_status_message():
     return status
 
-def load_gs(gs, filename):
+def load_gs(gs, gs_file):
     with open(gs_file, 'r') as file:
         data_with_types = json.load(file)
 
