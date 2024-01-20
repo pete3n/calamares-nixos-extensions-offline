@@ -670,7 +670,7 @@ def run():
                     value = gs.value(key)
                     if not value:
                         # This handles empty values, including None, '', [], etc.
-                        data_with_types[key] = {"value": value, "type": str(type(value).__name__})
+                        data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
                     if isinstance(value, bytes):
                         # Encode only if value is of type bytes (binary data)
                         encoded_password = base64.b64encode(value).decode('utf-8')
