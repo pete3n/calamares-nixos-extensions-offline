@@ -12,9 +12,6 @@ import libcalamares
 import os
 import subprocess
 import re
-import shutil
-import json
-import base64
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -650,74 +647,39 @@ def run():
     libcalamares.utils.host_env_process_output(
         ["cp", "/dev/stdin", config], None, cfg)
 
-    status = _("Saving NixOS configuration")
-    cfg_path = "/tmp/nixos"
-    hw_modules_path = os.path.join(cfg_path, "modules")
-    gs_path = os.path.join(cfg_path, 'calamares.gs')
+    # Copying user provided configuraitons
+    dynamic_config = "/tmp/nixos-offline/configuration.nix"
+    iso_config = "/iso/nix-cfg/configuration.nix"
+    config_dest = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
 
+    if os.path.exists(dynamic_config):
+        try:
+            subprocess.run(["sudo", "cp", dynamic_config, config_dest], check=True)
+        except subprocess.CalledProcessError as e:
+            return (_(f"Installation failed to copy configuration files, with error: {e}"))
+    elif os.path.exists(iso_config):
+        try:
+            subprocess.run(["sudo", "cp", iso_config, config_dest], check=True)
+        except subprocess.CalledProcessError as e:
+            return (_(f"Installation failed to copy configuration files, with error: {e}"))
+
+    status = _("Installing NixOS")
+    libcalamares.job.setprogress(0.3)
+
+    # Install customizations
     try:
-        os.makedirs(hw_modules_path)
-    except OSError as e:
-        libcalamares.utils.debug(f"Error creating directory {hw_modules_path}: {e}")
-        return (status, _("Failed to create directory for NixOS configuration."))
-
-    try:
-        data_with_types = {}
-        if hasattr(gs, 'keys'):
-            for key in gs.keys():
-                value = gs.value(key)
-                # Handle empty values, including None, '', [], etc.
-                if not value:
-                    data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
-                else:
-                    value = gs.value(key)
-                    data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
-        with open(gs_path, 'w') as file:
-            json.dump(data_with_types, file)
-    except IOError as e:
-        libcalamares.utils.debug(f"Error saving calamares globalstorage object {gs_path}: {e}")
-        return (status, _("Failed to save setup data."))
-
-    if not cfg_path:
-        libcalamares.utils.debug("Configuration path not set.")
-        return (status, _("No path was selected to save configuration"))
-
-    hardware_config_src = os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")
-    configuration_src = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
-    hardware_config_dest = os.path.join(cfg_path, "hardware-configuration.nix")
-    configuration_dest = os.path.join(cfg_path, "configuration.nix")
-
-    hw_module_src = None
-    try:
-        with open(hardware_config_src, 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                match = re.search(r'modulesPath \+ "/([^"]+)"', line)
-                if match:
-                    hw_module_filename = os.path.basename(match.group(1).strip('"'))
-                    for root, dirs, files in os.walk('/nix/store/'):
-                        if hw_module_filename in files:
-                            hw_module_src = os.path.join(root, hw_module_filename)
-                            break
-                    if hw_module_src:
-                        hw_modules_dest = os.path.join(hw_modules_path, hw_module_filename)
-                        shutil.copy(hw_module_src, hw_modules_dest)
-                    else:
-                        libcalamares.utils.debug(f"File not found in Nix store: {hw_module_filename}")
-                        return (status, _("File not found in Nix store."))
-                    break
-    except IOError as e:
-        libcalamares.utils.debug(f"Error reading hardware configuration: {e}")
-        return (status, _("Failed to read hardware configuration."))
-
-    try:
-        shutil.copy(hardware_config_src, hardware_config_dest)
-        shutil.copy(configuration_src, configuration_dest)
-        libcalamares.job.setprogress(1.0)
-        return (status, _(f"NixOS configuration files copied to: {cfg_path}"))
-
-    except IOError as e:
-        libcalamares.utils.debug(f"Error copying files: {e}")
-        return (status, _("Failed to copy NixOS configuration files."))
+        output = ""
+        proc = subprocess.Popen(["pkexec", "nixos-install", "--no-root-passwd", "--root", root_mount_point], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        while True:
+            line = proc.stdout.readline().decode("utf-8")
+            output += line
+            libcalamares.utils.debug("nixos-install: {}".format(line.strip()))
+            if not line:
+                break
+        exit = proc.wait()
+        if exit != 0:
+            return (_("nixos-install failed"), _(output))
+    except:
+        return (_("nixos-install failed"), _("Installation failed to complete"))
 
     return None
