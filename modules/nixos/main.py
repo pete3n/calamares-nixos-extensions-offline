@@ -666,14 +666,13 @@ def run():
         if hasattr(gs, 'keys'):
             for key in gs.keys():
                 value = gs.value(key)
-                # Handle empty values, including None, '', [], etc.
-                if not value:
-                    data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
-                # Handle binary password data
+                # base64 encode binary data
                 if isinstance(value, bytes):
-                    # Encode only if value is of type bytes (binary data)
                     encoded_password = base64.b64encode(value).decode('utf-8')
                     data_with_types[key] = {"value": encoded_password, "type": "base64_binary"}
+                # Handle empty values, including None, '', [], etc.
+                elif not value:
+                    data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
                 else:
                     value = gs.value(key)
                     data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
