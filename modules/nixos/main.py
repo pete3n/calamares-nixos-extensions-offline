@@ -665,21 +665,16 @@ def run():
         data_with_types = {}
         if hasattr(gs, 'keys'):
             for key in gs.keys():
-                if key == password_key and gs.contains(key):
-                    # Handle binary password data separately
-                    value = gs.value(key)
-                    if not value:
-                        # This handles empty values, including None, '', [], etc.
-                        data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
-                    if isinstance(value, bytes):
-                        # Encode only if value is of type bytes (binary data)
-                        encoded_password = base64.b64encode(value).decode('utf-8')
-                        data_with_types[key] = {"value": encoded_password, "type": "base64_binary"}
-                    else:
-                        # Handle non-binary password data
-                        data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
-                elif gs.contains(key):
-                    # Handle other data with type information
+                value = gs.value(key)
+                # Handle empty values, including None, '', [], etc.
+                if not value:
+                    data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
+                # Handle binary password data
+                if isinstance(value, bytes):
+                    # Encode only if value is of type bytes (binary data)
+                    encoded_password = base64.b64encode(value).decode('utf-8')
+                    data_with_types[key] = {"value": encoded_password, "type": "base64_binary"}
+                else:
                     value = gs.value(key)
                     data_with_types[key] = {"value": value, "type": str(type(value).__name__)}
         with open(gs_path, 'w') as file:
