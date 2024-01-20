@@ -78,20 +78,16 @@ def run():
     libcalamares.job.setprogress(0.3)
     nix_cfg_src = "/iso/nix-cfg"
 
+    hardware_config_src = os.path.join(nix_cfg_src, "hardware-configuration.nix")
+    configuration_src = os.path.join(nix_cfg_src, "configuration.nix")
+    hardware_config_dest = os.path.join(root_mount_point, "hardware-configuration.nix")
+    configuration_dest = os.path.join(root_mount_point, "configuration.nix")
+
     try:
-        for root, dirs, files in os.walk(nix_cfg_src):
-            dest = os.path.join(root_mount_point, os.path.relpath(root, nix_cfg_src))
-
-            if not os.path.exists(dest):
-                os.makedirs(est)
-
-            for file in files:
-                src_file = os.path.join(root, file)
-                dest_file = os.path.join(dest, file)
-                shutil.copy2(src_file, dest_file)
-
+        shutil.copy(hardware_config_src, hardware_config_dest)
+        shutil.copy(configuration_src, configuration_dest)
     except Exception as e:
-        return (_("nixos-install failed"), _(f"Installation failed to complete, with error: {e}"))
+        return (_("nixos-install failed"), _(f"Installation failed to copy configuration files, with error: {e}"))
 
     status = _("Installing NixOS")
     libcalamares.job.setprogress(0.4)
