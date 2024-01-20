@@ -6,7 +6,7 @@ import json
 gs = libcalamares.globalstorage
 gs_file = '/iso/nix-cfg/calamares.gs'
 
-with open(filename, 'r') as file:
+with open(gs_file, 'r') as file:
     data_with_types = json.load(file)
 
 for key, item in data_with_types.items():
