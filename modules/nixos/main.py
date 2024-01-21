@@ -674,7 +674,7 @@ def run():
             subprocess.run(["sudo", "mv", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.gen"),
                             os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")], check=True)
     except subprocess.CalledProcessError as e:
-        return (_(f"Installation failed to copy configuration files, with error: {e}"))
+        return ("Installation failed to copy configuration files", str(e))
 
     status = _("Installing NixOS")
     libcalamares.job.setprogress(0.3)
@@ -704,10 +704,10 @@ def run():
             while True:
                 line = proc.stdout.readline().decode("utf-8")
                 output += line
-                libcalamares.utils.debug("flake-install: {}".format(line.scrip()))
+                libcalamares.utils.debug("flake-install: {}".format(line.strip()))
                 if not line:
                     break
-            exit = proc.wai()
+            exit = proc.wait()
             if exit != 0:
                 return (_("flake install failed"), _(output))
 
