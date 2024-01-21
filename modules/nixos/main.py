@@ -648,8 +648,8 @@ def run():
         ["cp", "/dev/stdin", config], None, cfg)
 
     # Copying user provided configuraitons
-    dynamic_config = "/tmp/nixos-offline/configuration.nix"
-    iso_config = "/iso/nix-cfg/configuration.nix"
+    dynamic_config = "/tmp/nixos-offline/nixos/configuration.nix"
+    iso_config = "/iso/nix-cfg/nixos/configuration.nix"
     config_dest = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
 
     if os.path.exists(dynamic_config):
