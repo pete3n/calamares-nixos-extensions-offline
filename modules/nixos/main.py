@@ -641,25 +641,38 @@ def run():
             "boot\.extraModulePackages = \[ (.*) \];", "boot.extraModulePackages = [ {}];".format("".join(map(lambda x: x+" ", expkgs))), htxt)
         # Write the hardware-configuration.nix file
         libcalamares.utils.host_env_process_output(["cp", "/dev/stdin",
-                                                    root_mount_point+"/etc/nixos/hardware-configuration.nix"], None, hardwareout)
+                                                    root_mount_point+"/etc/nixos/hardware-configuration.gen"], None, hardwareout)
 
     # Write the configuration.nix file
     libcalamares.utils.host_env_process_output(
         ["cp", "/dev/stdin", config], None, cfg)
 
     # Copying user provided configuraitons
+    use_flake = False
     dynamic_config = "/tmp/nixos-offline/nixos/configuration.nix"
+    dynamic_flake = "/tmp/nixos-offline/flake.nix"
     iso_config = "/iso/nix-cfg/nixos/configuration.nix"
+    iso_flake = "/iso/nix-cfg/flake.nix"
     config_dest = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
 
-    if os.path.exists(dynamic_config):
-        try:
+    try:
+        if os.path.exists(dynamic_flake):
+            use_flake = True
+            subprocess.run(["sudo", "cp", "-r", os.path.dirname(dynamic_flake)+"/", os.path.join(root_mount_point, "etc/nixos/")], check=True)
+            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.gen"),
+                            os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")], check=True)
+        elif os.path.exists (dynamic_config):
             subprocess.run(["sudo", "cp", dynamic_config, config_dest], check=True)
-        except subprocess.CalledProcessError as e:
-            return (_(f"Installation failed to copy configuration files, with error: {e}"))
-    elif os.path.exists(iso_config):
-        try:
+        elif os.path.exists(iso_flake):
+            use_flake = True
+            subprocess.run(["sudo", "cp", "-r", os.path.dirname(iso_flake)+"/", os.path.join(root_mount_point, "etc/nixos/")], check=True)
+            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.gen"),
+                            os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")], check=True)
+        elif os.path.exists(iso_config):
             subprocess.run(["sudo", "cp", iso_config, config_dest], check=True)
+        else:
+            subprocess.run(["sudo", "mv", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.gen"),
+                            os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")], check=True)
         except subprocess.CalledProcessError as e:
             return (_(f"Installation failed to copy configuration files, with error: {e}"))
 
@@ -679,6 +692,25 @@ def run():
         exit = proc.wait()
         if exit != 0:
             return (_("nixos-install failed"), _(output))
+
+        # Configure flake
+        if use_flake:
+            output = ""
+            proc = subprocess.Popen(
+                ["pkexec", "nixos-rebuild", "switch", "--flake"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT
+            )
+            while True:
+                line = proc.stdout.readline().decode("utf-8")
+                output += line
+                libcalamares.utils.debug("flake-install: {}".format(line.scrip()))
+                if not line:
+                    break
+            exit = proc.wai()
+            if exit != 0:
+                return (_"flake install failed"), _(output))
+
     except:
         return (_("nixos-install failed"), _("Installation failed to complete"))
 
