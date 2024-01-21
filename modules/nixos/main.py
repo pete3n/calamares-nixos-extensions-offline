@@ -656,20 +656,41 @@ def run():
     config_dest = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
 
     try:
+
         if os.path.exists(dynamic_flake):
             use_flake = True
-            subprocess.run(["sudo", "cp", "-r", os.path.dirname(dynamic_flake)+"/*", os.path.join(root_mount_point, "etc/nixos/")], check=True)
+            src_dir = os.path.dirname(dynamic_flake)
+            dest_dir = os.path.join(root_mount_point, "etc/nixos/")
+                for item in os.listdir(src_dir):
+                    src_file = os.path.join(src_dir, file)
+                    dest_file = os.path.join(dest_dir, file)
+                    if os.path.isdir(src_file):
+                        subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
+                    else:
+                        subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
             subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix"),
                             os.path.join(root_mount_point, "etc/nixos/nixos/hardware-configuration.nix")], check=True)
+
         elif os.path.exists (dynamic_config):
             subprocess.run(["sudo", "cp", dynamic_config, config_dest], check=True)
+
         elif os.path.exists(iso_flake):
             use_flake = True
-            subprocess.run(["sudo", "cp", "-r", os.path.dirname(iso_flake)+"/*", os.path.join(root_mount_point, "etc/nixos/")], check=True)
-            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.gen"),
+            src_dir = os.path.dirname(iso_flake)
+            dest_dir = os.path.join(root_mount_point, "etc/nixos/")
+                for item in os.listdir(src_dir):
+                    src_file = os.path.join(src_dir, file)
+                    dest_file = os.path.join(dest_dir, file)
+                    if os.path.isdir(src_file):
+                        subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
+                    else:
+                        subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
+            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix"),
                             os.path.join(root_mount_point, "etc/nixos/nixos/hardware-configuration.nix")], check=True)
+
         elif os.path.exists(iso_config):
             subprocess.run(["sudo", "cp", iso_config, config_dest], check=True)
+
     except subprocess.CalledProcessError as e:
         return ("Installation failed to copy configuration files", str(e))
 
