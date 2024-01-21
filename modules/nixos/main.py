@@ -673,8 +673,8 @@ def run():
         else:
             subprocess.run(["sudo", "mv", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.gen"),
                             os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")], check=True)
-        except subprocess.CalledProcessError as e:
-            return (_(f"Installation failed to copy configuration files, with error: {e}"))
+    except subprocess.CalledProcessError as e:
+        return (_(f"Installation failed to copy configuration files, with error: {e}"))
 
     status = _("Installing NixOS")
     libcalamares.job.setprogress(0.3)
