@@ -709,7 +709,7 @@ def run():
                     break
             exit = proc.wai()
             if exit != 0:
-                return (_"flake install failed"), _(output))
+                return (_("flake install failed"), _(output))
 
     except:
         return (_("nixos-install failed"), _("Installation failed to complete"))
