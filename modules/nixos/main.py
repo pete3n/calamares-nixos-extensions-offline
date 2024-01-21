@@ -661,7 +661,7 @@ def run():
             use_flake = True
             src_dir = os.path.dirname(dynamic_flake)
             dest_dir = os.path.join(root_mount_point, "etc/nixos/")
-            for item in os.listdir(src_dir):
+            for file in os.listdir(src_dir):
                 src_file = os.path.join(src_dir, file)
                 dest_file = os.path.join(dest_dir, file)
                 if os.path.isdir(src_file):
@@ -678,7 +678,7 @@ def run():
             use_flake = True
             src_dir = os.path.dirname(iso_flake)
             dest_dir = os.path.join(root_mount_point, "etc/nixos/")
-                for item in os.listdir(src_dir):
+                for file in os.listdir(src_dir):
                     src_file = os.path.join(src_dir, file)
                     dest_file = os.path.join(dest_dir, file)
                     if os.path.isdir(src_file):
