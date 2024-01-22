@@ -668,8 +668,9 @@ def run():
                     subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
                 else:
                     subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
-            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix"),
-                            os.path.join(root_mount_point, "etc/nixos/nixos/hardware-configuration.nix")], check=True)
+            # Copy user provided configuration for initial nixos install
+            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/nixos/configuration.nix"),
+                            os.path.join(root_mount_point, "etc/nixos/configuration.nix")], check=True)
 
         elif os.path.exists (dynamic_config):
             subprocess.run(["sudo", "cp", dynamic_config, config_dest], check=True)
@@ -685,8 +686,9 @@ def run():
                     subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
                 else:
                     subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
-            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix"),
-                            os.path.join(root_mount_point, "etc/nixos/nixos/hardware-configuration.nix")], check=True)
+            # Copy user provided configuration for initial nixos install
+            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/nixos/configuration.nix"),
+                            os.path.join(root_mount_point, "etc/nixos/configuration.nix")], check=True)
 
         elif os.path.exists(iso_config):
             subprocess.run(["sudo", "cp", iso_config, config_dest], check=True)
@@ -715,7 +717,7 @@ def run():
         if use_flake:
             output = ""
             proc = subprocess.Popen(
-                ["pkexec", "nixos-rebuild", "switch", "--flake"],
+                ["pkexec", "nixos-rebuild", "switch", "--flake", ".#nixos"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT
             )
