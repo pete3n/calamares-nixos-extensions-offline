@@ -726,8 +726,8 @@ def run():
                 if not line:
                     break
             exit = proc.wait()
-            if exit != 0:
-                return (_("flake install failed"), _(output))
+            #if exit != 0:
+            #    return (_("flake install failed"), _(output))
 
     except:
         return (_("nixos-install failed"), _("Installation failed to complete"))
