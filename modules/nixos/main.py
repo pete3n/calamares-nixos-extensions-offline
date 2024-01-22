@@ -678,13 +678,13 @@ def run():
             use_flake = True
             src_dir = os.path.dirname(iso_flake)
             dest_dir = os.path.join(root_mount_point, "etc/nixos/")
-                for file in os.listdir(src_dir):
-                    src_file = os.path.join(src_dir, file)
-                    dest_file = os.path.join(dest_dir, file)
-                    if os.path.isdir(src_file):
-                        subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
-                    else:
-                        subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
+            for file in os.listdir(src_dir):
+                src_file = os.path.join(src_dir, file)
+                dest_file = os.path.join(dest_dir, file)
+                if os.path.isdir(src_file):
+                    subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
+                else:
+                    subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
             subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix"),
                             os.path.join(root_mount_point, "etc/nixos/nixos/hardware-configuration.nix")], check=True)
 
