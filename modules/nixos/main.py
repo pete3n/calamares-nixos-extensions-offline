@@ -651,7 +651,7 @@ def run():
             htxt = hf.read()
         if htxt.strip().endswith("}"):
             htxt = htxt.strip("}\n").rstrip()
-        htxt += luks_swap + "\n}\n"
+        htxt += "\n" + luks_swap + "\n}\n"
         libcalamares.utils.host_env_process_output(["cp", "/dev/stdin",
                                                     root_mount_point+"/etc/nixos/hardware-configuration.nix"], None, htxt)
 
@@ -660,8 +660,8 @@ def run():
         ["cp", "/dev/stdin", config], None, cfg)
 
     # Copying user provided configuraitons
-    dynamic_config = "/tmp/nix-cfg/nixos/configuration.nix"
-    iso_config = "/iso/nix-cfg/nixos/configuration.nix"
+    dynamic_config = "/tmp/nix-cfg/configuration.nix"
+    iso_config = "/iso/nix-cfg/configuration.nix"
     hw_cfg_dest = os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")
     hw_modified = False
 
