@@ -12,6 +12,7 @@ import libcalamares
 import os
 import subprocess
 import re
+import tempfile
 
 import gettext
 _ = gettext.translation("calamares-python",
@@ -376,9 +377,11 @@ def run():
 
     # Setup encrypted swap devices. nixos-generate-config doesn't seem to notice them.
     for part in gs.value("partitions"):
+        luks_swap = None
         if part["claimed"] == True and part["fsName"] == "luks" and part["device"] is not None and part["fs"] == "linuxswap":
-            cfg += """  boot.initrd.luks.devices."{}".device = "/dev/disk/by-uuid/{}";\n""".format(
+            luks_swap = """  boot.initrd.luks.devices."{}".device = "/dev/disk/by-uuid/{}";\n""".format(
                 part["luksMapperName"], part["uuid"])
+            cfg += luks_swap
 
     # Check partitions
     for part in gs.value("partitions"):
@@ -642,24 +645,32 @@ def run():
         # Write the hardware-configuration.nix file
         libcalamares.utils.host_env_process_output(["cp", "/dev/stdin",
                                                     root_mount_point+"/etc/nixos/hardware-configuration.nix"], None, hardwareout)
+    # Add luks swap partition if it exists
+    if luks_swap is not None:
+        with open(root_mount_point + "/etc/nixos/hardware-configuration.nix", "r") as hf:
+            htxt = hf.read()
+        if htxt.strip().endswith("}"):
+            htxt = htxt.strip("}\n").rstrip()
+        htxt += luks_swap + "\n}\n"
+        libcalamares.utils.host_env_process_output(["cp", "/dev/stdin",
+                                                    root_mount_point+"/etc/nixos/hardware-configuration.nix"], None, htxt)
 
     # Write the configuration.nix file
     libcalamares.utils.host_env_process_output(
         ["cp", "/dev/stdin", config], None, cfg)
 
     # Copying user provided configuraitons
-    use_flake = False
-    dynamic_config = "/tmp/nixos-offline/nixos/configuration.nix"
-    dynamic_flake = "/tmp/nixos-offline/flake.nix"
+    dynamic_config = "/tmp/nix-cfg/nixos/configuration.nix"
     iso_config = "/iso/nix-cfg/nixos/configuration.nix"
-    iso_flake = "/iso/nix-cfg/flake.nix"
-    config_dest = os.path.join(root_mount_point, "etc/nixos/configuration.nix")
+    hw_cfg_dest = os.path.join(root_mount_point, "etc/nixos/hardware-configuration.nix")
+    hw_modified = False
 
     try:
+        with open(hw_cfg_dest, "r") as hf:
+            hw_cfg = hf.read()
 
-        if os.path.exists(dynamic_flake):
-            use_flake = True
-            src_dir = os.path.dirname(dynamic_flake)
+        if os.path.exists (dynamic_config):
+            src_dir = "/tmp/nix-cfg/"
             dest_dir = os.path.join(root_mount_point, "etc/nixos/")
             for file in os.listdir(src_dir):
                 src_file = os.path.join(src_dir, file)
@@ -668,33 +679,34 @@ def run():
                     subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
                 else:
                     subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
-            # Copy user provided configuration for initial nixos install
-            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/nixos/configuration.nix"),
-                            os.path.join(root_mount_point, "etc/nixos/configuration.nix")], check=True)
-
-        elif os.path.exists (dynamic_config):
-            subprocess.run(["sudo", "cp", dynamic_config, config_dest], check=True)
-
-        elif os.path.exists(iso_flake):
-            use_flake = True
-            src_dir = os.path.dirname(iso_flake)
-            dest_dir = os.path.join(root_mount_point, "etc/nixos/")
-            for file in os.listdir(src_dir):
-                src_file = os.path.join(src_dir, file)
-                dest_file = os.path.join(dest_dir, file)
-                if os.path.isdir(src_file):
-                    subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
-                else:
-                    subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
-            # Copy user provided configuration for initial nixos install
-            subprocess.run(["sudo", "cp", os.path.join(root_mount_point, "etc/nixos/nixos/configuration.nix"),
-                            os.path.join(root_mount_point, "etc/nixos/configuration.nix")], check=True)
+            hw_modified = True
 
         elif os.path.exists(iso_config):
-            subprocess.run(["sudo", "cp", iso_config, config_dest], check=True)
+            src_dir = "/iso/nix-cfg/"
+            dest_dir = os.path.join(root_mount_point, "etc/nixos/")
+            for file in os.listdir(src_dir):
+                src_file = os.path.join(src_dir, file)
+                dest_file = os.path.join(dest_dir, file)
+                if os.path.isdir(src_file):
+                    subprocess.run(["sudo", "cp", "-r", src_file, dest_file], check=True)
+                else:
+                    subprocess.run(["sudo", "cp", src_file, dest_file], check=True)
+            hw_modified = True
+
+        temp_filepath = ""
+        if hw_modified:
+            # Restore generated hardware-configuration
+            with tempfile.NamedTemporaryFile(mode="w", delete=False) as temp_file:
+                temp_file.write(hw_cfg)
+                temp_filepath = temp_file.name
+            subprocess.run(["sudo", "mv", temp_filepath, hw_cfg_dest], check=True)
 
     except subprocess.CalledProcessError as e:
         return ("Installation failed to copy configuration files", str(e))
+
+    finally:
+        if os.path.exists(temp_filepath):
+            os.remove(temp_filepath)
 
     status = _("Installing NixOS")
     libcalamares.job.setprogress(0.3)
@@ -712,24 +724,6 @@ def run():
         exit = proc.wait()
         if exit != 0:
             return (_("nixos-install failed"), _(output))
-
-        # Configure flake
-        if use_flake:
-            output = ""
-            proc = subprocess.Popen(
-                ["pkexec", "nixos-rebuild", "switch", "--flake", ".#nixos"],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT
-            )
-            while True:
-                line = proc.stdout.readline().decode("utf-8")
-                output += line
-                libcalamares.utils.debug("flake-install: {}".format(line.strip()))
-                if not line:
-                    break
-            exit = proc.wait()
-            #if exit != 0:
-            #    return (_("flake install failed"), _(output))
 
     except:
         return (_("nixos-install failed"), _("Installation failed to complete"))
